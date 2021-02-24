@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000030  00000000  00000000  0002003c  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000571c  00000000  00000000  0002006c  2**0
+ 12 .debug_info   00005700  00000000  00000000  0002006c  2**0
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_abbrev 00001117  00000000  00000000  00025788  2**0
+ 13 .debug_abbrev 00001108  00000000  00000000  0002576c  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_aranges 000005e0  00000000  00000000  000268a0  2**3
+ 14 .debug_aranges 000005e0  00000000  00000000  00026878  2**3
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_ranges 00000548  00000000  00000000  00026e80  2**3
+ 15 .debug_ranges 00000548  00000000  00000000  00026e58  2**3
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_macro  00014701  00000000  00000000  000273c8  2**0
+ 16 .debug_macro  00014701  00000000  00000000  000273a0  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_line   00004f96  00000000  00000000  0003bac9  2**0
+ 17 .debug_line   00004f94  00000000  00000000  0003baa1  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    00080ea3  00000000  00000000  00040a5f  2**0
+ 18 .debug_str    00080e85  00000000  00000000  00040a35  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  000c1902  2**0
+ 19 .comment      0000007b  00000000  00000000  000c18ba  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  000016dc  00000000  00000000  000c1980  2**2
+ 20 .debug_frame  000016dc  00000000  00000000  000c1938  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -385,11 +385,11 @@ int main(void)
  80004e4:	f000 f89a 	bl	800061c <MX_GPIO_Init>
 	MX_USART2_UART_Init();
  80004e8:	f000 f86e 	bl	80005c8 <MX_USART2_UART_Init>
-	while (1)
 	{
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
+
 		ButtonMatrixUpdate();
  80004ec:	f000 f95c 	bl	80007a8 <ButtonMatrixUpdate>
  80004f0:	e7fc      	b.n	80004ec <main+0x14>
@@ -837,16 +837,16 @@ static void MX_GPIO_Init(void)
  80007a4:	10210000 	.word	0x10210000
 
 080007a8 <ButtonMatrixUpdate>:
-{ GPIO_PIN_10, GPIO_PIN_3, GPIO_PIN_5, GPIO_PIN_4, GPIO_PIN_9, GPIO_PIN_7,
 GPIO_PIN_6, GPIO_PIN_7 };
 
-uint8_t ButtonMatrixRow = 0;  //What  R Now
+uint8_t Button_row = 0;
+
 void ButtonMatrixUpdate()
 {
  80007a8:	b580      	push	{r7, lr}
  80007aa:	b082      	sub	sp, #8
  80007ac:	af00      	add	r7, sp, #0
-	if (HAL_GetTick() - ButtonMatrixTimestamp >= 100)
+	if (HAL_GetTick() - ButtonMatrixTimestamp >= 100)  //sampling 100ms (delay)
  80007ae:	f000 f9c9 	bl	8000b44 <HAL_GetTick>
  80007b2:	4602      	mov	r2, r0
  80007b4:	4b3c      	ldr	r3, [pc, #240]	; (80008a8 <ButtonMatrixUpdate+0x100>)
@@ -855,18 +855,18 @@ void ButtonMatrixUpdate()
  80007ba:	2b63      	cmp	r3, #99	; 0x63
  80007bc:	d96f      	bls.n	800089e <ButtonMatrixUpdate+0xf6>
 	{
-		ButtonMatrixTimestamp = HAL_GetTick();
+		ButtonMatrixTimestamp = HAL_GetTick();  //update time
  80007be:	f000 f9c1 	bl	8000b44 <HAL_GetTick>
  80007c2:	4602      	mov	r2, r0
  80007c4:	4b38      	ldr	r3, [pc, #224]	; (80008a8 <ButtonMatrixUpdate+0x100>)
  80007c6:	601a      	str	r2, [r3, #0]
-		int i;
-		for (i = 0; i < 4; i += 1)
+
+		for (int Button_column = 0; Button_column < 4; Button_column += 1)
  80007c8:	2300      	movs	r3, #0
  80007ca:	607b      	str	r3, [r7, #4]
  80007cc:	e037      	b.n	800083e <ButtonMatrixUpdate+0x96>
-		{ //0-3
-			GPIO_PinState PinState = HAL_GPIO_ReadPin(ButtonMatrixPort[i],
+		{
+			GPIO_PinState PinState = HAL_GPIO_ReadPin(ButtonPort[Button_column], ButtonPin[Button_column]);
  80007ce:	4a37      	ldr	r2, [pc, #220]	; (80008ac <ButtonMatrixUpdate+0x104>)
  80007d0:	687b      	ldr	r3, [r7, #4]
  80007d2:	f852 0023 	ldr.w	r0, [r2, r3, lsl #2]
@@ -876,14 +876,14 @@ void ButtonMatrixUpdate()
  80007de:	4619      	mov	r1, r3
  80007e0:	f000 fc24 	bl	800102c <HAL_GPIO_ReadPin>
  80007e4:	4603      	mov	r3, r0
- 80007e6:	707b      	strb	r3, [r7, #1]
-					ButtonMatrixPin[i]);
-			if (PinState == GPIO_PIN_RESET) // Button Press
- 80007e8:	787b      	ldrb	r3, [r7, #1]
+ 80007e6:	70fb      	strb	r3, [r7, #3]
+
+			if (PinState == GPIO_PIN_RESET)
+ 80007e8:	78fb      	ldrb	r3, [r7, #3]
  80007ea:	2b00      	cmp	r3, #0
  80007ec:	d111      	bne.n	8000812 <ButtonMatrixUpdate+0x6a>
 			{
-				ButtonMatrixState |= (uint16_t) 1 << (i + ButtonMatrixRow * 4);
+				ButtonMatrixState |= (uint16_t) 1 << (Button_column + Button_row * 4);
  80007ee:	4b31      	ldr	r3, [pc, #196]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
  80007f0:	781b      	ldrb	r3, [r3, #0]
  80007f2:	009a      	lsls	r2, r3, #2
@@ -904,7 +904,7 @@ void ButtonMatrixUpdate()
 			}
 			else
 			{
-				ButtonMatrixState &= ~((uint16_t) 1 << (i + ButtonMatrixRow * 4));
+				ButtonMatrixState &= ~((uint16_t) 1 << (Button_column + Button_row * 4));
  8000812:	4b28      	ldr	r3, [pc, #160]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
  8000814:	781b      	ldrb	r3, [r3, #0]
  8000816:	009a      	lsls	r2, r3, #2
@@ -923,7 +923,7 @@ void ButtonMatrixUpdate()
  8000832:	b29a      	uxth	r2, r3
  8000834:	4b20      	ldr	r3, [pc, #128]	; (80008b8 <ButtonMatrixUpdate+0x110>)
  8000836:	801a      	strh	r2, [r3, #0]
-		for (i = 0; i < 4; i += 1)
+		for (int Button_column = 0; Button_column < 4; Button_column += 1)
  8000838:	687b      	ldr	r3, [r7, #4]
  800083a:	3301      	adds	r3, #1
  800083c:	607b      	str	r3, [r7, #4]
@@ -932,25 +932,24 @@ void ButtonMatrixUpdate()
  8000842:	ddc4      	ble.n	80007ce <ButtonMatrixUpdate+0x26>
 			}
 		}
-		uint8_t NowOutputPin = ButtonMatrixRow + 4;
+		//Set current-Output pin
+		HAL_GPIO_WritePin(ButtonPort[Button_row + 4], ButtonPin[Button_row + 4], GPIO_PIN_SET);
  8000844:	4b1b      	ldr	r3, [pc, #108]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
  8000846:	781b      	ldrb	r3, [r3, #0]
  8000848:	3304      	adds	r3, #4
- 800084a:	70fb      	strb	r3, [r7, #3]
-		//SET Rn
-		HAL_GPIO_WritePin(ButtonMatrixPort[NowOutputPin],
- 800084c:	78fb      	ldrb	r3, [r7, #3]
- 800084e:	4a17      	ldr	r2, [pc, #92]	; (80008ac <ButtonMatrixUpdate+0x104>)
- 8000850:	f852 0023 	ldr.w	r0, [r2, r3, lsl #2]
- 8000854:	78fb      	ldrb	r3, [r7, #3]
+ 800084a:	4a18      	ldr	r2, [pc, #96]	; (80008ac <ButtonMatrixUpdate+0x104>)
+ 800084c:	f852 0023 	ldr.w	r0, [r2, r3, lsl #2]
+ 8000850:	4b18      	ldr	r3, [pc, #96]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
+ 8000852:	781b      	ldrb	r3, [r3, #0]
+ 8000854:	3304      	adds	r3, #4
  8000856:	4a16      	ldr	r2, [pc, #88]	; (80008b0 <ButtonMatrixUpdate+0x108>)
  8000858:	f832 3013 	ldrh.w	r3, [r2, r3, lsl #1]
  800085c:	2201      	movs	r2, #1
  800085e:	4619      	mov	r1, r3
  8000860:	f000 fbfc 	bl	800105c <HAL_GPIO_WritePin>
-				ButtonMatrixPin[NowOutputPin], GPIO_PIN_SET);
-		// update New Row
-		ButtonMatrixRow = (ButtonMatrixRow + 1) % 4;
+
+		//update new row
+		Button_row = (Button_row + 1) % 4;
  8000864:	4b13      	ldr	r3, [pc, #76]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
  8000866:	781b      	ldrb	r3, [r3, #0]
  8000868:	3301      	adds	r3, #1
@@ -963,24 +962,21 @@ void ButtonMatrixUpdate()
  800087a:	4b0e      	ldr	r3, [pc, #56]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
  800087c:	701a      	strb	r2, [r3, #0]
 
-		uint8_t NextOutputPin = ButtonMatrixRow + 4;
+		//Reset next-Output pin
+		HAL_GPIO_WritePin(ButtonPort[Button_row + 4], ButtonPin[Button_row + 4], GPIO_PIN_RESET);
  800087e:	4b0d      	ldr	r3, [pc, #52]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
  8000880:	781b      	ldrb	r3, [r3, #0]
  8000882:	3304      	adds	r3, #4
- 8000884:	70bb      	strb	r3, [r7, #2]
-		//Reset Rn+1
-		HAL_GPIO_WritePin(ButtonMatrixPort[NextOutputPin],
- 8000886:	78bb      	ldrb	r3, [r7, #2]
- 8000888:	4a08      	ldr	r2, [pc, #32]	; (80008ac <ButtonMatrixUpdate+0x104>)
- 800088a:	f852 0023 	ldr.w	r0, [r2, r3, lsl #2]
- 800088e:	78bb      	ldrb	r3, [r7, #2]
+ 8000884:	4a09      	ldr	r2, [pc, #36]	; (80008ac <ButtonMatrixUpdate+0x104>)
+ 8000886:	f852 0023 	ldr.w	r0, [r2, r3, lsl #2]
+ 800088a:	4b0a      	ldr	r3, [pc, #40]	; (80008b4 <ButtonMatrixUpdate+0x10c>)
+ 800088c:	781b      	ldrb	r3, [r3, #0]
+ 800088e:	3304      	adds	r3, #4
  8000890:	4a07      	ldr	r2, [pc, #28]	; (80008b0 <ButtonMatrixUpdate+0x108>)
  8000892:	f832 3013 	ldrh.w	r3, [r2, r3, lsl #1]
  8000896:	2200      	movs	r2, #0
  8000898:	4619      	mov	r1, r3
  800089a:	f000 fbdf 	bl	800105c <HAL_GPIO_WritePin>
-				ButtonMatrixPin[NextOutputPin], GPIO_PIN_RESET);
-
 	}
 }
  800089e:	bf00      	nop
