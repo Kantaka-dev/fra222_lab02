@@ -45,7 +45,7 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 
 uint16_t ButtonMatrixState[2] = {0};
-uint16_t ButtonMatrixHistory[11] = {0};
+uint16_t ButtonMatrixHistory[12] = {0};  //memory last 11-bits
 uint32_t ButtonMatrixTimestamp = 0;
 
 /* USER CODE END PV */
@@ -112,8 +112,10 @@ int main(void)
 
 		ButtonMatrixUpdate();
 
-		if (ButtonMatrixState[0]!=ButtonMatrixState[1] && ButtonMatrixState[0]!=(uint16_t)0)
+		if (ButtonMatrixState[0]!=ButtonMatrixState[1] && ButtonMatrixState[1]==(uint16_t)0)
 		{
+			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+
 			switch (ButtonMatrixState[0])
 			{
 				case 0b0000000000000001:
@@ -129,7 +131,10 @@ int main(void)
 					break;
 
 				case 0b0000000000001000:
-					//clear
+					//clear history
+					for (int i = 0; i < 12; i += 1) {
+						ButtonMatrixHistory[i] = 0;
+					}
 					break;
 
 				case 0b0000000000010000:
@@ -146,6 +151,14 @@ int main(void)
 
 				case 0b0000000010000000:
 					//backspace
+					for (int i = 0; i < 11; i += 1) {
+						if (i == 10) {
+							ButtonMatrixHistory[i] = 0;
+						}
+						else {
+							ButtonMatrixHistory[i] = ButtonMatrixHistory[i+2];
+						}
+					}
 					break;
 
 				case 0b0000000100000000:
@@ -165,14 +178,22 @@ int main(void)
 					break;
 
 				case 0b1000000000000000:
-					//ok
+					//press ok
+					ButtonMatrixCheck();  //check
+					for (int i = 0; i < 11; i += 1) {
+						ButtonMatrixHistory[i] = ButtonMatrixHistory[i+1];
+					}
 					break;
 
 				default:
+					//pass
+					for (int i = 0; i < 11; i += 1) {
+						ButtonMatrixHistory[i] = ButtonMatrixHistory[i+1];
+					}
 					break;
 			}
 			//update history
-			for (int i = 10; i > 0; i -= 1) {
+			for (int i = 11; i > 0; i -= 1) {
 				ButtonMatrixHistory[i] = ButtonMatrixHistory[i-1];
 			}
 		}
@@ -350,7 +371,7 @@ uint8_t Button_row = 0;
 
 void ButtonMatrixUpdate()
 {
-	if (HAL_GetTick() - ButtonMatrixTimestamp >= 100)  //sampling 100ms (delay)
+	if (HAL_GetTick() - ButtonMatrixTimestamp >= 50)  //sampling 50ms (delay)
 	{
 		ButtonMatrixTimestamp = HAL_GetTick();  //update time
 
@@ -380,17 +401,17 @@ void ButtonMatrixUpdate()
 
 void ButtonMatrixCheck()
 {
-	if (ButtonMatrixHistory[10] == 6 &&
-		ButtonMatrixHistory[9] == 2 &&
-		ButtonMatrixHistory[8] == 3 &&
-		ButtonMatrixHistory[7] == 4 &&
-		ButtonMatrixHistory[6] == 0 &&
-		ButtonMatrixHistory[5] == 5 &&
+	if (ButtonMatrixHistory[11] == 6 &&
+		ButtonMatrixHistory[10] == 2 &&
+		ButtonMatrixHistory[9] == 3 &&
+		ButtonMatrixHistory[8] == 4 &&
+		ButtonMatrixHistory[7] == 0 &&
+		ButtonMatrixHistory[6] == 5 &&
+		ButtonMatrixHistory[5] == 0 &&
 		ButtonMatrixHistory[4] == 0 &&
 		ButtonMatrixHistory[3] == 0 &&
 		ButtonMatrixHistory[2] == 0 &&
-		ButtonMatrixHistory[1] == 0 &&
-		ButtonMatrixHistory[0] == 2 )
+		ButtonMatrixHistory[1] == 2 )
 	{
 		//turn ON LED
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
