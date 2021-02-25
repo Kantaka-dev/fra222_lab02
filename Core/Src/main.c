@@ -371,7 +371,7 @@ uint8_t Button_row = 0;
 
 void ButtonMatrixUpdate()
 {
-	if (HAL_GetTick() - ButtonMatrixTimestamp >= 50)  //sampling 50ms (delay)
+	if (HAL_GetTick() - ButtonMatrixTimestamp >= 25)  //sampling 25ms (delay)
 	{
 		ButtonMatrixTimestamp = HAL_GetTick();  //update time
 

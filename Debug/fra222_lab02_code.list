@@ -1135,13 +1135,13 @@ void ButtonMatrixUpdate()
  8000964:	b580      	push	{r7, lr}
  8000966:	b082      	sub	sp, #8
  8000968:	af00      	add	r7, sp, #0
-	if (HAL_GetTick() - ButtonMatrixTimestamp >= 50)  //sampling 50ms (delay)
+	if (HAL_GetTick() - ButtonMatrixTimestamp >= 25)  //sampling 25ms (delay)
  800096a:	f000 fa03 	bl	8000d74 <HAL_GetTick>
  800096e:	4602      	mov	r2, r0
  8000970:	4b3c      	ldr	r3, [pc, #240]	; (8000a64 <ButtonMatrixUpdate+0x100>)
  8000972:	681b      	ldr	r3, [r3, #0]
  8000974:	1ad3      	subs	r3, r2, r3
- 8000976:	2b31      	cmp	r3, #49	; 0x31
+ 8000976:	2b18      	cmp	r3, #24
  8000978:	d96f      	bls.n	8000a5a <ButtonMatrixUpdate+0xf6>
 	{
 		ButtonMatrixTimestamp = HAL_GetTick();  //update time
